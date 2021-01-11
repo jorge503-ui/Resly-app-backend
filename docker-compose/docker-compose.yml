@@ -1,0 +1,49 @@
+version: "3"
+services:
+  #Servidor EUREKA
+  eureka:
+    image: eureka:1.0
+    container_name: eureka
+    ports:
+      - "8761:8761"
+    volumes:
+      - "eureka-log:/var/log"
+    networks:
+      - net-ms
+  #API Resly
+  cursos:
+    image: resly-app:1.0
+    container_name: resly-app
+    depends_on:
+      - eureka
+    environment:
+      - EUREKA_CLIENT_SERVICE-URL_DEFAULTZONE=http://eureka:8761/eureka
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysqldb:3306/db_microservicios_examenes?serverTimezone=UTC
+      - SPRING_DATASOURCE_USERNAME=desarrollo
+      - SPRING_DATASOURCE_PASSWORD=desarrollo
+    volumes:
+      - "resly-app-log:/tmp/logs"
+    networks:
+      - net-ms
+  #API Gateway
+  gateway:
+    image: gateway:1.0
+    container_name: gateway
+    depends_on:
+      - eureka
+      - resly-app
+    ports:
+      - "8090:8090"
+    environment:
+      - SERVER_PORT=8090
+      - EUREKA_CLIENT_SERVICE-URL_DEFAULTZONE=http://eureka:8761/eureka
+    volumes:
+      - "gateway-log:/var/log"
+    networks:
+      - net-ms
+volumes:
+  resly-app-log:
+  eureka-log:
+  gateway-log:
+networks:
+  net-ms:
