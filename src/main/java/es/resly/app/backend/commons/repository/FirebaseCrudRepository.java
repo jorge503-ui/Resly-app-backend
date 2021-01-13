@@ -33,7 +33,7 @@ public class FirebaseCrudRepository<T,ID> {
 
     @Transactional
     public <S extends T> Iterable<S> saveAll(Iterable<S> itrbl) throws ExecutionException, InterruptedException {
-        List<S> it = null;
+        List<S> it = new ArrayList <>();
         for (S s:itrbl) {
             String id = UUID.randomUUID().toString();
             ApiFuture<DocumentReference> addedDocRef = dbFirestore.collection(collection).add(s);
@@ -44,11 +44,7 @@ public class FirebaseCrudRepository<T,ID> {
 
     public boolean existsById(ID id) throws ExecutionException, InterruptedException {
         DocumentReference docRef = dbFirestore.collection(collection).document((String) id);
-        if (docRef.get().get().exists()) {
-            return true;
-        } else {
-            return false;
-        }
+        return docRef.get().get().exists();
     }
 
     public Iterable<T> findAll(){
