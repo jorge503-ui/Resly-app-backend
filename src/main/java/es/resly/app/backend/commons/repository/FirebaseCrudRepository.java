@@ -1,20 +1,18 @@
 package es.resly.app.backend.commons.repository;
 
 import com.google.api.core.ApiFuture;
-import com.google.cloud.firestore.Firestore;
-import com.google.cloud.firestore.QuerySnapshot;
-import com.google.cloud.firestore.WriteResult;
+import com.google.cloud.firestore.*;
 import com.google.firebase.cloud.FirestoreClient;
 import es.resly.app.backend.usuarios.controllers.UsuarioController;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
-@Component
 public class FirebaseCrudRepository<T,ID> {
 
     protected Firestore dbFirestore = FirestoreClient.getFirestore();
@@ -22,13 +20,36 @@ public class FirebaseCrudRepository<T,ID> {
 
     private static final Logger logger = LogManager.getLogger(UsuarioController.class);
 
+    @Transactional
     public void save(T t, String id){
         dbFirestore.collection(collection).document(id).set(t);
     }
 
-    public <S extends T> Iterable<S> saveAll(Iterable<S> itrbl){return null;}
+    @Transactional
+    public T save(T t) throws ExecutionException, InterruptedException {
+        ApiFuture<DocumentReference> addedDocRef = dbFirestore.collection(collection).add(t);
+        return (T) addedDocRef.get().get().get().toObject(Object.class);
+    }
 
-    public boolean existsById(ID id){return false;}
+    @Transactional
+    public <S extends T> Iterable<S> saveAll(Iterable<S> itrbl) throws ExecutionException, InterruptedException {
+        List<S> it = null;
+        for (S s:itrbl) {
+            String id = UUID.randomUUID().toString();
+            ApiFuture<DocumentReference> addedDocRef = dbFirestore.collection(collection).add(s);
+            it.add((S) addedDocRef.get().get().get().toObject(Object.class));
+        }
+        return it;
+    }
+
+    public boolean existsById(ID id) throws ExecutionException, InterruptedException {
+        DocumentReference docRef = dbFirestore.collection(collection).document((String) id);
+        if (docRef.get().get().exists()) {
+            return true;
+        } else {
+            return false;
+        }
+    }
 
     public Iterable<T> findAll(){
         ApiFuture<QuerySnapshot> query = dbFirestore.collection(collection).get();
@@ -45,21 +66,51 @@ public class FirebaseCrudRepository<T,ID> {
         return t;
     }
 
-    public Iterable<T> findAllById(Iterable<ID> itrbl){return null;}
+    public Iterable<T> findAllById(Iterable<ID> itrbl) throws ExecutionException, InterruptedException {
+        List<T> list = new ArrayList <>();
+        for (ID id:itrbl) {
+            DocumentReference docRef = dbFirestore.collection(collection).document((String) id);
+            list.add((T) docRef.get().get().toObject(Object.class));
+        }
+        return list;
+    }
 
-    public long count(){return 0;}
+    public long count() throws ExecutionException, InterruptedException {
+        return dbFirestore.collection(collection).get().get().size();
+    }
 
-    public void delete(T t){}
+    public void deleteAll(int batchSize){
+        try {
+            // retrieve a small batch of documents to avoid out-of-memory errors
+            ApiFuture<QuerySnapshot> future = dbFirestore.collection(collection).limit(batchSize).get();
+            int deleted = 0;
+            // future.get() blocks on document retrieval
+            List<QueryDocumentSnapshot> documents = future.get().getDocuments();
+            for (QueryDocumentSnapshot document : documents) {
+                document.getReference().delete();
+                ++deleted;
+            }
+            if (deleted >= batchSize) {
+                // retrieve and delete another batch
+                deleteAll(batchSize);
+            }
+        } catch (Exception e) {
+            logger.error("Error eliminado registros",e);
+        }
+    }
 
-    public void deleteAll(Iterable<? extends T> itrbl){}
+    public T findById(ID id) throws ExecutionException, InterruptedException {
+        return (T) dbFirestore.collection(collection).document((String) id).get().get().toObject(Object.class);
+    }
 
-    public void deleteAll(){}
+    public T update(T t, String id){
+        dbFirestore.collection(collection).document(id).set(t);
+        return t;
+    }
 
-    public T findById(ID id){return null;}
-
-    public T update(T t){return null;}
-
-    public void deleteById(ID id){}
+    public void deleteById(ID id){
+        dbFirestore.collection(collection).document((String) id).delete();
+    }
 
     public void setCollection(String c){
         collection = c;

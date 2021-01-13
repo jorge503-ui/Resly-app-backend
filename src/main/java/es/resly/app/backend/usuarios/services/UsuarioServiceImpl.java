@@ -1,5 +1,6 @@
 package es.resly.app.backend.usuarios.services;
 
+import com.google.firebase.auth.DeleteUsersResult;
 import es.resly.app.backend.usuarios.models.Usuario;
 import es.resly.app.backend.usuarios.repository.UsuarioRepository;
 import org.springframework.stereotype.Service;
@@ -39,5 +40,35 @@ public class UsuarioServiceImpl implements UsuarioService {
     @Override
     public void deleteById(Long id) {
 
+    }
+
+    @Override
+    public Usuario getUsuarioByIdFirebase(String id) {
+        return repository.getUsuarioByIdFirebase(id);
+    }
+
+    @Override
+    public Usuario crearUsuarioFirebase(Usuario usuario) {
+        return repository.crearUsuarioFirebase(usuario);
+    }
+
+    @Override
+    public void eliminarUsuarioFirebase(String uid) {
+        repository.eliminarUsuarioFirebase(uid);
+    }
+
+    @Override
+    public void actualizarUsuarioFirebase(Usuario usuario) {
+        repository.actualizarUsuarioFirebase(usuario);
+    }
+
+    @Override
+    public DeleteUsersResult eliminarListaUsuariosFirebase(List <Usuario> usuarioList) {
+        return repository.eliminarListaUsuariosFirebase(usuarioList);
+    }
+
+    @Override
+    public List <Usuario> getUsuariosFirebase(String pageToken, int maxResult) {
+        return repository.getUsuariosFirebase(pageToken,maxResult);
     }
 }

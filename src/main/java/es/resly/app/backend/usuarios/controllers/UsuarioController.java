@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("usuario")
@@ -56,19 +55,7 @@ public class UsuarioController {
 
         logger.info("Creando usuario en firebase");
         try {
-            UserRecord.CreateRequest request = new UserRecord.CreateRequest()
-                    .setEmail(usuario.getCorreo())
-                    .setEmailVerified(false)
-                    .setPassword(usuario.getContrasea())
-                    .setPhoneNumber(usuario.getNumTelefono())
-                    .setDisplayName(usuario.getNombre() + usuario.getApellido())
-                    .setPhotoUrl(usuario.getFotoPerfil())
-                    .setDisabled(false);
-
-            UserRecord userRecord = FirebaseAuth.getInstance().createUser(request);
-            logger.info("Usuario creado exitosamente en firebase: " + userRecord.getUid());
-            usuario.setId(userRecord.getUid());
-
+            services.crearUsuarioFirebase(usuario);
         } catch (Exception e) {
             logger.error("Ocurrio un error al crear usuario", e);
             rsp = response.messageException(HttpStatus.BAD_REQUEST.value(),e);
@@ -88,7 +75,8 @@ public class UsuarioController {
             rsp = response.messageException(HttpStatus.BAD_REQUEST.value(),e);
 
             //Si en tal caso da error al crear usuario en BD se elimina de firebase
-            eliminarUsuario(usuario.getId());
+            logger.error("ELiminado usuario de firebase");
+            services.eliminarUsuarioFirebase(usuario.getId());
         }
         return response.messageResponse(rsp);
     }
@@ -100,15 +88,7 @@ public class UsuarioController {
 
         logger.info("Actualizando usuario en firebase");
         try {
-            UserRecord.UpdateRequest request = new UserRecord.UpdateRequest(usuario.getId())
-                    .setEmail(usuario.getCorreo())
-                    .setPassword(usuario.getContrasea())
-                    .setPhoneNumber(usuario.getNumTelefono())
-                    .setDisplayName(usuario.getNombre() + usuario.getApellido())
-                    .setPhotoUrl(usuario.getFotoPerfil());
-
-            UserRecord userRecord = FirebaseAuth.getInstance().updateUser(request);
-            logger.info("Usuario actualizado exitosamente en firebase: " + userRecord.getUid());
+            services.actualizarUsuarioFirebase(usuario);
 
             //Respuesta
             rsp = response.messageOk(HttpStatus.CREATED.value());
@@ -130,9 +110,7 @@ public class UsuarioController {
 
         logger.info("Eliminando usuario en firebase");
         try {
-            FirebaseAuth.getInstance().deleteUser(uid);
-            logger.info("Usuario eliminado exitosamente en firebase: " + uid);
-
+            services.eliminarUsuarioFirebase(uid);
             //Respuesta
             rsp = response.messageOk(HttpStatus.OK.value());
         } catch (Exception e) {
@@ -153,12 +131,7 @@ public class UsuarioController {
         logger.info("Eliminando listado de usuarios en firebase");
         try {
             //Eliminamos los usuario estrayendo los id's de usuarios de RequestBody
-            DeleteUsersResult result = FirebaseAuth.getInstance().deleteUsersAsync(
-                    usuarios.stream().map(Usuario::getId
-                    ).collect(Collectors.toList())).get();
-
-            logger.info("Successfully deleted " + result.getSuccessCount() + " users");
-            logger.info("Failed to delete " + result.getFailureCount() + " users");
+            DeleteUsersResult result = services.eliminarListaUsuariosFirebase(usuarios);
 
             //Respuesta
             if (result.getFailureCount()==0){

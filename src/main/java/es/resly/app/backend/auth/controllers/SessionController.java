@@ -9,13 +9,13 @@ import es.resly.app.backend.auth.models.SecurityProperties;
 import es.resly.app.backend.auth.models.User;
 import es.resly.app.backend.auth.services.CookieService;
 import es.resly.app.backend.auth.services.SecurityService;
+import es.resly.app.backend.usuarios.repository.UsuarioRepository;
+import es.resly.app.backend.usuarios.services.UsuarioServiceImpl;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;

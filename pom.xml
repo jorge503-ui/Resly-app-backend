@@ -100,7 +100,17 @@
             <artifactId>spring-data-commons</artifactId>
             <version>2.3.4.RELEASE</version>
         </dependency>
-        <!--Fin Test-->
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-tx</artifactId>
+			<version>5.2.9.RELEASE</version>
+		</dependency>
+		<dependency>
+			<groupId>org.eclipse.persistence</groupId>
+			<artifactId>org.eclipse.persistence.jpa</artifactId>
+			<version>2.5.2</version>
+		</dependency>
+		<!--Fin Test-->
 	</dependencies>
 
 	<build>
