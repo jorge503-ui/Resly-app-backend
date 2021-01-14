@@ -2,12 +2,7 @@ package es.resly.app.backend.usuarios.models;
 import java.io.Serializable;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.google.firebase.database.annotations.NotNull;
 import lombok.Data;
-
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Table;
 
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)

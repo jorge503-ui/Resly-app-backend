@@ -1,5 +1,7 @@
 package es.resly.app.backend.commons.models;
 
+import com.google.firebase.database.Exclude;
+
 public class Fichero {
     private String id;
     private String nombreArchivo;
@@ -7,7 +9,10 @@ public class Fichero {
     private String descripcion;
     private String tipoArchivo;
     private String titulo;
+    @Exclude
     private String base64;
+    @Exclude
+    private String extencion;
 
     public String getId() {
         return id;
@@ -63,5 +68,13 @@ public class Fichero {
 
     public void setBase64(String base64) {
         this.base64 = base64;
+    }
+
+    public String getExtencion() {
+        return extencion;
+    }
+
+    public void setExtencion(String extencion) {
+        this.extencion = extencion;
     }
 }

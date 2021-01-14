@@ -9,12 +9,9 @@ import es.resly.app.backend.auth.models.SecurityProperties;
 import es.resly.app.backend.auth.models.User;
 import es.resly.app.backend.auth.services.CookieService;
 import es.resly.app.backend.auth.services.SecurityService;
-import es.resly.app.backend.usuarios.repository.UsuarioRepository;
-import es.resly.app.backend.usuarios.services.UsuarioServiceImpl;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.google.firebase.auth.FirebaseAuth;
@@ -49,6 +46,8 @@ public class SessionController {
             cookieUtils.setCookie("authenticated", Boolean.toString(true), sessionExpiryDays);
             logger.info("Session creada exitosamente");
         } catch (FirebaseAuthException e) {
+            logger.info("Ha ocurrido un problema",e);
+        }catch (Exception e){
             logger.info("Ha ocurrido un problema",e);
         }
     }

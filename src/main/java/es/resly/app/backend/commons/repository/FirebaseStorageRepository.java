@@ -2,17 +2,16 @@ package es.resly.app.backend.commons.repository;
 
 import com.google.cloud.storage.*;
 import es.resly.app.backend.auth.config.FirebaseConfig;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.ByteArrayOutputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 
 public class FirebaseStorageRepository {
 
-    protected FirebaseConfig firebaseConfig;
+    @Autowired
+    protected FirebaseConfig firebaseConfig = new FirebaseConfig();
 
     public String uploadObject(String objectName, byte[] object) throws IOException {
         Bucket bucket = firebaseConfig.getStorage();
@@ -21,15 +20,13 @@ public class FirebaseStorageRepository {
         BlobInfo blobInfo = BlobInfo.newBuilder(blobId).build();
         return storage.create(blobInfo, object).getMediaLink();
 
-        //System.out.println("File " + filePath + " uploaded to bucket " + bucketName + " as " + objectName)
     }
 
-    public String uploadObject(String projectId, String bucketName, String objectName, byte[] object) throws IOException {
+    public String uploadObject(String projectId, String bucketName, String objectName, byte[] object) {
         Storage storage = StorageOptions.newBuilder().setProjectId(projectId).build().getService();
         BlobId blobId = BlobId.of(bucketName, objectName);
         BlobInfo blobInfo = BlobInfo.newBuilder(blobId).build();
         return storage.create(blobInfo, object).getMediaLink();
-        //System.out.println("File " + filePath + " uploaded to bucket " + bucketName + " as " + objectName);
     }
 
     public byte[] downloadObject(String objectName) throws IOException {

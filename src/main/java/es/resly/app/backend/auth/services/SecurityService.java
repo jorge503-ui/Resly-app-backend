@@ -2,14 +2,9 @@ package es.resly.app.backend.auth.services;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseAuthException;
-import com.google.firebase.auth.UserRecord;
 import es.resly.app.backend.auth.models.Credentials;
 import es.resly.app.backend.auth.models.SecurityProperties;
 import es.resly.app.backend.auth.models.User;
-import es.resly.app.backend.usuarios.controllers.UsuarioController;
-import es.resly.app.backend.usuarios.models.Usuario;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;

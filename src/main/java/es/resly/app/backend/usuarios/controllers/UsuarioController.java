@@ -2,6 +2,7 @@ package es.resly.app.backend.usuarios.controllers;
 
 import com.google.common.io.BaseEncoding;
 import com.google.firebase.auth.*;
+import es.resly.app.backend.auth.services.SecurityService;
 import es.resly.app.backend.commons.helper.ResponseMessage;
 import es.resly.app.backend.commons.models.Fichero;
 import es.resly.app.backend.commons.repository.FirebaseStorageRepository;
@@ -16,10 +17,8 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.ExecutionException;
 
 @RestController
 @RequestMapping("usuario")
@@ -30,7 +29,10 @@ public class UsuarioController {
     @Autowired
     private UsuarioServiceImpl services;
 
-    private FirebaseStorageRepository storage;
+    @Autowired
+    private SecurityService securityService;
+
+    private FirebaseStorageRepository storage = new FirebaseStorageRepository();
 
     private final ResponseMessage response = new ResponseMessage();
 
@@ -213,21 +215,43 @@ public class UsuarioController {
     }
 
     @PostMapping("imagen/perfil")
-    public ResponseEntity<?> upload(@Validated @RequestBody Fichero fichero){
+    public ResponseEntity<?> uploadImagePerfil(@Validated @RequestBody Fichero fichero){
         Map<String, Object> rsp;
         logger.info("Agregando Fichero");
 
         try {
-            String ruta = storage.uploadObject(fichero.getNombreArchivo(), BaseEncoding.base64().decode(fichero.getBase64()));
-            fichero.setRuta(ruta);
+            logger.info("Generando nombre de archivo");
+            String nombre = fichero.getNombreArchivo() + "-" + UUID.randomUUID().toString() + fichero.getExtencion();
+            logger.info("Nombre fichero: "+ nombre);
+
+            String ruta = storage.uploadObject(nombre, BaseEncoding.base64().decode(fichero.getBase64()));
+            logger.info("Imagen subido exitosamente");
+
+            logger.info("Actualizando firebase");
+            Usuario usuario = services.findById(securityService.getUser().getUid());
+            usuario.setFotoPerfil(ruta);
+            services.actualizarUsuarioFirebase(usuario);
+            logger.info("Firebase actualizado correctamente");
+
+            logger.info("Actualizando DB");
+            services.update(usuario);
+            logger.info("DB actualizado correctamente");
+
             //Respuesta
             rsp = response.messageOk(HttpStatus.OK.value());
-            rsp.put("fichero",fichero);
+            rsp.put("ruta",ruta);
+        } catch (ExecutionException e) {
+            logger.error("Ocurrio un error al subir imagen", e);
+            rsp = response.messageException(HttpStatus.BAD_REQUEST.value(),e);
+        } catch (InterruptedException e) {
+            logger.error("Ocurrio un error al subir imagen", e);
+            rsp = response.messageException(HttpStatus.BAD_REQUEST.value(),e);
         } catch (IOException e) {
             logger.error("Ocurrio un error al subir imagen", e);
             rsp = response.messageException(HttpStatus.BAD_REQUEST.value(),e);
         }
 
+        logger.info("Enviando respuesta");
         return response.messageResponse(rsp);
     }
 }
