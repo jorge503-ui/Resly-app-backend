@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
-public class FirebaseCrudRepository<T,ID> {
+public class FirebaseCrudRepository<T extends Object,ID> {
 
     protected Firestore dbFirestore = FirestoreClient.getFirestore();
     private String collection;
@@ -96,7 +96,19 @@ public class FirebaseCrudRepository<T,ID> {
     }
 
     public T findById(ID id) throws ExecutionException, InterruptedException {
-        return (T) dbFirestore.collection(collection).document((String) id).get().get().toObject(Object.class);
+        DocumentReference documentReference = dbFirestore.collection(collection).document((String) id);
+        ApiFuture<DocumentSnapshot> future = documentReference.get();
+
+        DocumentSnapshot document = future.get();
+
+        Object o = null;
+
+        if(document.exists()) {
+            o = document.toObject(Object.class);
+            return (T) o;
+        }else {
+            return null;
+        }
     }
 
     public T update(T t, String id){

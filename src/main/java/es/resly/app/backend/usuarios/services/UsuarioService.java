@@ -5,6 +5,7 @@ import es.resly.app.backend.commons.services.CommonServices;
 import es.resly.app.backend.usuarios.models.Usuario;
 
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 public interface UsuarioService extends CommonServices<Usuario> {
 
@@ -19,4 +20,8 @@ public interface UsuarioService extends CommonServices<Usuario> {
     public DeleteUsersResult eliminarListaUsuariosFirebase(List <Usuario> usuarioList);
 
     public List<Usuario> getUsuariosFirebase(String pageToken,int maxResult);
+
+    public boolean existUsuarioFirebase(String uid);
+
+    public Usuario getUserByEmailFirebase(String email) throws ExecutionException, InterruptedException;
 }

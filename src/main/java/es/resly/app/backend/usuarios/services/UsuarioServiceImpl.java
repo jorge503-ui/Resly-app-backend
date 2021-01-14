@@ -1,11 +1,14 @@
 package es.resly.app.backend.usuarios.services;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.firebase.auth.DeleteUsersResult;
+import com.google.firebase.auth.UserRecord;
 import es.resly.app.backend.usuarios.models.Usuario;
 import es.resly.app.backend.usuarios.repository.UsuarioRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 @Service
 public class UsuarioServiceImpl implements UsuarioService {
@@ -22,8 +25,10 @@ public class UsuarioServiceImpl implements UsuarioService {
     }
 
     @Override
-    public Usuario findById(Long id) {
-        return null;
+    public Usuario findById(String id) throws ExecutionException, InterruptedException {
+        ObjectMapper mapper = new ObjectMapper();
+        Object t = repository.findById(id);
+        return mapper.convertValue(t,Usuario.class);
     }
 
     @Override
@@ -34,12 +39,12 @@ public class UsuarioServiceImpl implements UsuarioService {
 
     @Override
     public Usuario update(Usuario entity) {
-        return null;
+        return repository.update(entity,entity.getId());
     }
 
     @Override
-    public void deleteById(Long id) {
-
+    public void deleteById(String id) {
+        repository.deleteById(id);
     }
 
     @Override
@@ -70,5 +75,21 @@ public class UsuarioServiceImpl implements UsuarioService {
     @Override
     public List <Usuario> getUsuariosFirebase(String pageToken, int maxResult) {
         return repository.getUsuariosFirebase(pageToken,maxResult);
+    }
+
+    @Override
+    public boolean existUsuarioFirebase(String uid) {
+        return repository.existUserByIdFirebase(uid);
+    }
+
+    @Override
+    public Usuario getUserByEmailFirebase(String email) throws ExecutionException, InterruptedException {
+        UserRecord ur = repository.getUserByEmailFirebase(email);
+        Usuario u = new Usuario();
+        u.setId(ur.getUid());
+        u.setNumTelefono(ur.getPhoneNumber());
+        u.setNombre(ur.getDisplayName());
+        u.setFotoPerfil(ur.getPhotoUrl());
+        return u;
     }
 }

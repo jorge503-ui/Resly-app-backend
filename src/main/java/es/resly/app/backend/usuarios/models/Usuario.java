@@ -5,11 +5,12 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.firebase.database.annotations.NotNull;
 import lombok.Data;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.Table;
 
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Entity(name = "usuarios")
 public class Usuario implements Serializable {
 
     private static final long serialVersionUID = 4408418647685225829L;

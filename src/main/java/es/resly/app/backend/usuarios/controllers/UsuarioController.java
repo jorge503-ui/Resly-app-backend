@@ -16,6 +16,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,7 +34,7 @@ public class UsuarioController {
 
     private final ResponseMessage response = new ResponseMessage();
 
-    @GetMapping("all")
+    @GetMapping("/")
     public ResponseEntity<?> consultarUsuarios(){
         Map<String, Object> rsp;
         List<Usuario> usuarios;
@@ -48,6 +49,21 @@ public class UsuarioController {
         return response.messageResponse(rsp);
     }
 
+    @GetMapping("usuario/")
+    public ResponseEntity<?> consultarUsuario(@RequestParam(name = "uid") String uid){
+        Map<String, Object> rsp;
+        Usuario usuario;
+        try {
+            usuario = services.findById(uid);
+            rsp = response.messageOk(HttpStatus.OK.value());
+            rsp.put("usuario",usuario);
+        }catch (Exception e){
+            logger.error("Ocurrio un error al obtener usuario", e);
+            rsp = response.messageException(HttpStatus.INTERNAL_SERVER_ERROR.value(),e);
+        }
+        return response.messageResponse(rsp);
+    }
+
     @PostMapping("crear")
     public ResponseEntity<?> crearUsuario(@Validated @RequestBody Usuario usuario){
         Map<String, Object> rsp;
@@ -55,7 +71,13 @@ public class UsuarioController {
 
         logger.info("Creando usuario en firebase");
         try {
-            services.crearUsuarioFirebase(usuario);
+            if(!services.existUsuarioFirebase(usuario.getCorreo())) {
+                logger.info("Si no exite con correo se crea el usuario");
+                usuario = services.crearUsuarioFirebase(usuario);
+            }else {
+                logger.info("Si exite con correo se obtiene el id de usuario");
+                usuario.setId(services.getUserByEmailFirebase(usuario.getCorreo()).getId());
+            }
         } catch (Exception e) {
             logger.error("Ocurrio un error al crear usuario", e);
             rsp = response.messageException(HttpStatus.BAD_REQUEST.value(),e);
@@ -68,7 +90,8 @@ public class UsuarioController {
             logger.info("Usuario Creado exitosamente");
 
             //Respuesta
-            rsp = response.messageOk(HttpStatus.CREATED.value());
+            logger.info("Generando respuesta");
+            rsp = response.messageOk(HttpStatus.OK.value());
             rsp.put("uid",usuario.getId());
         } catch (Exception e) {
             logger.error("Ocurrio un error al crear usuario", e);
@@ -78,6 +101,7 @@ public class UsuarioController {
             logger.error("ELiminado usuario de firebase");
             services.eliminarUsuarioFirebase(usuario.getId());
         }
+        logger.info("Respuesta: " + rsp.get("uid"));
         return response.messageResponse(rsp);
     }
 
@@ -89,37 +113,57 @@ public class UsuarioController {
         logger.info("Actualizando usuario en firebase");
         try {
             services.actualizarUsuarioFirebase(usuario);
-
-            //Respuesta
-            rsp = response.messageOk(HttpStatus.CREATED.value());
-            rsp.put("uid",usuario.getId());
+            logger.info("Actualizado correctamente en firebase");
         } catch (Exception e) {
             logger.error("Ocurrio un error al actualizar usuario", e);
             rsp = response.messageException(HttpStatus.BAD_REQUEST.value(),e);
+            return response.messageResponse(rsp);
         }
 
         logger.info("Actualizando usuario en BD");
+        try {
+            services.update(usuario);
+            logger.info("Actualizado correctamente");
 
+            //Respuesta
+            rsp = response.messageOk(HttpStatus.OK.value());
+        }catch (Exception e){
+            logger.error("Ocurrio un error al actualizar usuario", e);
+            rsp = response.messageException(HttpStatus.BAD_REQUEST.value(),e);
+            //Si ocurre un error al actualizar usuario de firebase no se permite actualizar usuario de BD
+            return response.messageResponse(rsp);
+        }
+        logger.info("Enviando respuesta");
         return response.messageResponse(rsp);
     }
 
-    @PostMapping("eliminar/{uid}")
-    public ResponseEntity<?> eliminarUsuario(@PathVariable String uid){
+    @PostMapping("eliminar/")
+    public ResponseEntity<?> eliminarUsuario(@RequestParam(name = "uid") String uid){
         Map<String, Object> rsp;
         logger.info("Eliminando usuario " +uid);
 
         logger.info("Eliminando usuario en firebase");
         try {
             services.eliminarUsuarioFirebase(uid);
-            //Respuesta
-            rsp = response.messageOk(HttpStatus.OK.value());
+            logger.info("Eliminado correctamente en firebase");
         } catch (Exception e) {
             logger.error("Ocurrio un error al eliminar usuario", e);
             rsp = response.messageException(HttpStatus.BAD_REQUEST.value(),e);
+            //Si ocurre un error al eliminar usuario de firebase no se permite eliminar usuario de BD
+            return response.messageResponse(rsp);
         }
 
         logger.info("Eliminando usuario en BD");
-
+        try {
+            services.deleteById(uid);
+            logger.info("Eliminado correctamente en BD");
+            //Respuesta
+            rsp = response.messageOk(HttpStatus.OK.value());
+        }catch (Exception e){
+            logger.error("Ocurrio un error al eliminar usuario", e);
+            rsp = response.messageException(HttpStatus.BAD_REQUEST.value(),e);
+        }
+        logger.info("Enviando respuesta");
         return response.messageResponse(rsp);
     }
 
@@ -132,11 +176,13 @@ public class UsuarioController {
         try {
             //Eliminamos los usuario estrayendo los id's de usuarios de RequestBody
             DeleteUsersResult result = services.eliminarListaUsuariosFirebase(usuarios);
-
+            logger.info("Eliminado listado de usuarios en firebase correctamente");
             //Respuesta
             if (result.getFailureCount()==0){
+                logger.info("Eliminacion sin ningun problema");
                 rsp = response.messageOk(HttpStatus.OK.value());
             }else {
+                logger.info("Existen problemas al eliminar usuarios");
                 rsp = response.messageProblem(HttpStatus.CONFLICT.value());
                 HashMap<String,Object> errors = new HashMap<>();
                 for (ErrorInfo error : result.getErrors()) {
@@ -151,11 +197,22 @@ public class UsuarioController {
         }
 
         logger.info("Eliminando usuarios en BD");
+        List<Usuario> usuariosError = new ArrayList <>();
+        usuarios.forEach(u -> {
+            if (!services.existUsuarioFirebase(u.getId())) {
+                services.deleteById(u.getId());
+            } else {
+                usuariosError.add(u);
+            }
+        });
+        if (!usuariosError.isEmpty()) rsp.put("usuarios_errors",usuariosError);
+        logger.info("Rutina de eliminacion ejecutada correctamente");
 
+        logger.info("Enviando respuesta");
         return response.messageResponse(rsp);
     }
 
-    @PostMapping("image/perfil")
+    @PostMapping("imagen/perfil")
     public ResponseEntity<?> upload(@Validated @RequestBody Fichero fichero){
         Map<String, Object> rsp;
         logger.info("Agregando Fichero");
