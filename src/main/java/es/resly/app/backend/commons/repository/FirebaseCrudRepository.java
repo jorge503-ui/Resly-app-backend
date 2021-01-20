@@ -123,4 +123,8 @@ public class FirebaseCrudRepository<T extends Object,ID> {
     public void setCollection(String c){
         collection = c;
     }
+
+    public String getCollection(){
+        return this.collection;
+    }
 }

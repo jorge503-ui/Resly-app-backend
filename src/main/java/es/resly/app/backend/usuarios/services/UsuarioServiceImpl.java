@@ -3,11 +3,13 @@ package es.resly.app.backend.usuarios.services;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.firebase.auth.DeleteUsersResult;
 import com.google.firebase.auth.UserRecord;
-import es.resly.app.backend.usuarios.models.Usuario;
+import es.resly.app.backend.commons.models.Comercio;
+import es.resly.app.backend.commons.models.Usuario;
 import es.resly.app.backend.usuarios.repository.UsuarioRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
 @Service
@@ -33,6 +35,16 @@ public class UsuarioServiceImpl implements UsuarioService {
 
     @Override
     public Usuario save(Usuario entity, String id) {
+        entity.setId(id);
+        repository.save(entity,id);
+        return entity;
+    }
+
+    @Override
+    public Usuario save(Usuario entity) {
+        String id;
+        id=UUID.randomUUID().toString();
+        entity.setId(id);
         repository.save(entity,id);
         return entity;
     }
@@ -87,9 +99,19 @@ public class UsuarioServiceImpl implements UsuarioService {
         UserRecord ur = repository.getUserByEmailFirebase(email);
         Usuario u = new Usuario();
         u.setId(ur.getUid());
-        u.setNumTelefono(ur.getPhoneNumber());
+        u.setNum_telefono(ur.getPhoneNumber());
         u.setNombre(ur.getDisplayName());
-        u.setFotoPerfil(ur.getPhotoUrl());
+        u.setFoto_perfil(ur.getPhotoUrl());
         return u;
+    }
+
+    @Override
+    public void agregarComercioUsuario(Comercio comercio, String uidUsuario) {
+        repository.agregarComercioUsuario(comercio, uidUsuario);
+    }
+
+    @Override
+    public void eliminarComercioUsuario(Comercio comercio, String uidUsuario) {
+
     }
 }

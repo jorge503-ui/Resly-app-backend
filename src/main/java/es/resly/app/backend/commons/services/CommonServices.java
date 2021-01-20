@@ -12,6 +12,8 @@ public interface CommonServices<E> {
 
     public E save(E entity, String id);
 
+    public E save(E entity);
+
     public E update(E entity);
 
     public void deleteById(String id);

@@ -1,10 +1,15 @@
 package es.resly.app.backend.usuarios.repository;
 
+import com.google.api.core.ApiFuture;
+import com.google.cloud.firestore.DocumentReference;
+import com.google.cloud.firestore.FieldValue;
+import com.google.cloud.firestore.WriteResult;
 import com.google.common.base.Strings;
 import com.google.firebase.auth.*;
+import es.resly.app.backend.commons.models.Comercio;
 import es.resly.app.backend.commons.repository.FirebaseCrudRepository;
 import es.resly.app.backend.usuarios.controllers.UsuarioController;
-import es.resly.app.backend.usuarios.models.Usuario;
+import es.resly.app.backend.commons.models.Usuario;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Repository;
@@ -28,9 +33,9 @@ public class UsuarioRepository extends FirebaseCrudRepository <Usuario, String> 
             UserRecord userRecord = FirebaseAuth.getInstance().getUser(id);
             usuario.setId(userRecord.getUid());
             usuario.setCorreo(userRecord.getEmail());
-            usuario.setFotoPerfil(userRecord.getPhotoUrl());
+            usuario.setFoto_perfil(userRecord.getPhotoUrl());
             usuario.setNombre(userRecord.getDisplayName());
-            usuario.setNumTelefono(userRecord.getPhoneNumber());
+            usuario.setNum_telefono(userRecord.getPhoneNumber());
         } catch (FirebaseAuthException e) {
             logger.error("Ocurrio un error al crear usuario", e);
         }
@@ -47,9 +52,9 @@ public class UsuarioRepository extends FirebaseCrudRepository <Usuario, String> 
                     Usuario usuario = new Usuario();
                     usuario.setId(user.getUid());
                     usuario.setCorreo(user.getEmail());
-                    usuario.setFotoPerfil(user.getPhotoUrl());
+                    usuario.setFoto_perfil(user.getPhotoUrl());
                     usuario.setNombre(user.getDisplayName());
-                    usuario.setNumTelefono(user.getPhoneNumber());
+                    usuario.setNum_telefono(user.getPhoneNumber());
 
                     usuarios.add(usuario);
                 }
@@ -67,9 +72,9 @@ public class UsuarioRepository extends FirebaseCrudRepository <Usuario, String> 
                     .setEmail(usuario.getCorreo())
                     .setEmailVerified(false)
                     .setPassword(usuario.getContrasea())
-                    .setPhoneNumber(usuario.getNumTelefono())
+                    .setPhoneNumber(usuario.getNum_telefono())
                     .setDisplayName(usuario.getNombre() + usuario.getApellido())
-                    .setPhotoUrl(usuario.getFotoPerfil())
+                    .setPhotoUrl(usuario.getFoto_perfil())
                     .setDisabled(false);
 
             UserRecord userRecord = FirebaseAuth.getInstance().createUser(request);
@@ -95,9 +100,9 @@ public class UsuarioRepository extends FirebaseCrudRepository <Usuario, String> 
             UserRecord.UpdateRequest request = new UserRecord.UpdateRequest(usuario.getId())
                     .setEmail(usuario.getCorreo())
                     .setPassword(usuario.getContrasea())
-                    .setPhoneNumber(usuario.getNumTelefono())
+                    .setPhoneNumber(usuario.getNum_telefono())
                     .setDisplayName(usuario.getNombre() + usuario.getApellido())
-                    .setPhotoUrl(usuario.getFotoPerfil());
+                    .setPhotoUrl(usuario.getFoto_perfil());
 
             UserRecord userRecord = FirebaseAuth.getInstance().updateUser(request);
 
@@ -143,7 +148,22 @@ public class UsuarioRepository extends FirebaseCrudRepository <Usuario, String> 
         }else {
             return true;
         }
-
-
     }
+
+    public void agregarComercioUsuario(Comercio comercio, String usuarioId){
+        DocumentReference comercios = dbFirestore.collection(getCollection()).document(usuarioId);
+
+        // Atomically add a new region to the "regions" array field.
+        ApiFuture<WriteResult> arrayUnion = comercios.update("comercios",
+                FieldValue.arrayUnion(comercio));
+    }
+
+    public void  eliminarComercioUsuario(Comercio comercio, String usuarioId){
+        DocumentReference comercios = dbFirestore.collection(getCollection()).document(usuarioId);
+
+        // Atomically add a new region to the "regions" array field.
+        ApiFuture<WriteResult> arrayUnion = comercios.update("comercios",
+                FieldValue.arrayUnion(comercio));
+    }
+
 }

@@ -6,7 +6,7 @@ import es.resly.app.backend.auth.services.SecurityService;
 import es.resly.app.backend.commons.helper.ResponseMessage;
 import es.resly.app.backend.commons.models.Fichero;
 import es.resly.app.backend.commons.repository.FirebaseStorageRepository;
-import es.resly.app.backend.usuarios.models.Usuario;
+import es.resly.app.backend.commons.models.Usuario;
 import es.resly.app.backend.usuarios.services.UsuarioServiceImpl;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
@@ -39,15 +39,18 @@ public class UsuarioController {
     @GetMapping("/")
     public ResponseEntity<?> consultarUsuarios(){
         Map<String, Object> rsp;
+        logger.info("Obteniendo lista de usuarios");
         List<Usuario> usuarios;
         try {
             usuarios = services.findAll();
+            logger.info("Usuarios obtenidos exitosamente");
             rsp = response.messageOk(HttpStatus.OK.value());
             rsp.put("usuarios",usuarios);
         }catch (Exception e){
             logger.error("Ocurrio un error al listar los usuarios", e);
             rsp = response.messageException(HttpStatus.INTERNAL_SERVER_ERROR.value(),e);
         }
+        logger.info("Enviando respuesta");
         return response.messageResponse(rsp);
     }
 
@@ -132,8 +135,6 @@ public class UsuarioController {
         }catch (Exception e){
             logger.error("Ocurrio un error al actualizar usuario", e);
             rsp = response.messageException(HttpStatus.BAD_REQUEST.value(),e);
-            //Si ocurre un error al actualizar usuario de firebase no se permite actualizar usuario de BD
-            return response.messageResponse(rsp);
         }
         logger.info("Enviando respuesta");
         return response.messageResponse(rsp);
@@ -199,15 +200,15 @@ public class UsuarioController {
         }
 
         logger.info("Eliminando usuarios en BD");
-        List<Usuario> usuariosError = new ArrayList <>();
+        List<Usuario> errors = new ArrayList <>();
         usuarios.forEach(u -> {
             if (!services.existUsuarioFirebase(u.getId())) {
                 services.deleteById(u.getId());
             } else {
-                usuariosError.add(u);
+                errors.add(u);
             }
         });
-        if (!usuariosError.isEmpty()) rsp.put("usuarios_errors",usuariosError);
+        if (!errors.isEmpty()) rsp.put("usuarios_errors",errors);
         logger.info("Rutina de eliminacion ejecutada correctamente");
 
         logger.info("Enviando respuesta");
@@ -229,7 +230,7 @@ public class UsuarioController {
 
             logger.info("Actualizando firebase");
             Usuario usuario = services.findById(securityService.getUser().getUid());
-            usuario.setFotoPerfil(ruta);
+            usuario.setFoto_perfil(ruta);
             services.actualizarUsuarioFirebase(usuario);
             logger.info("Firebase actualizado correctamente");
 

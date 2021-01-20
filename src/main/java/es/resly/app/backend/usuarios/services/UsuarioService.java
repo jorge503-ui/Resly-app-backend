@@ -1,8 +1,9 @@
 package es.resly.app.backend.usuarios.services;
 
 import com.google.firebase.auth.DeleteUsersResult;
+import es.resly.app.backend.commons.models.Comercio;
 import es.resly.app.backend.commons.services.CommonServices;
-import es.resly.app.backend.usuarios.models.Usuario;
+import es.resly.app.backend.commons.models.Usuario;
 
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -24,4 +25,8 @@ public interface UsuarioService extends CommonServices<Usuario> {
     public boolean existUsuarioFirebase(String uid);
 
     public Usuario getUserByEmailFirebase(String email) throws ExecutionException, InterruptedException;
+
+    public void agregarComercioUsuario(Comercio comercio, String uidUsuario);
+
+    public void eliminarComercioUsuario(Comercio comercio, String uidUsuario);
 }

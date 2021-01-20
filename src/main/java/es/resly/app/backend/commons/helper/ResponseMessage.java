@@ -2,10 +2,12 @@ package es.resly.app.backend.commons.helper;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Data
@@ -19,6 +21,14 @@ public class ResponseMessage {
 
     public ResponseEntity<?> messageResponse(Map<String, Object> respuesta){
         return ResponseEntity.status(Integer.parseInt(respuesta.get("status").toString())).body(respuesta);
+    }
+
+    public ResponseEntity<?> messageResponseObjetcOk(Object respuesta){
+        return ResponseEntity.status(HttpStatus.OK).body(respuesta);
+    }
+
+    public ResponseEntity<?> messageResponseListObjetcOk(List<Object> respuesta){
+        return ResponseEntity.status(HttpStatus.OK).body(respuesta);
     }
 
     public Map<String, Object> messageException(int status, Throwable e){
@@ -57,4 +67,5 @@ public class ResponseMessage {
         hasmap.put("message", message);
         return hasmap;
     }
+
 }
