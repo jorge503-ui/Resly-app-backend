@@ -3,6 +3,7 @@ package es.resly.app.backend.usuarios.controllers;
 import com.google.common.io.BaseEncoding;
 import com.google.firebase.auth.*;
 import es.resly.app.backend.auth.services.SecurityService;
+import es.resly.app.backend.commons.helper.Correo;
 import es.resly.app.backend.commons.helper.ResponseMessage;
 import es.resly.app.backend.commons.models.Fichero;
 import es.resly.app.backend.commons.repository.FirebaseStorageRepository;
@@ -35,6 +36,8 @@ public class UsuarioController {
     private FirebaseStorageRepository storage = new FirebaseStorageRepository();
 
     private final ResponseMessage response = new ResponseMessage();
+
+    private Correo correo;
 
     @GetMapping("/")
     public ResponseEntity<?> consultarUsuarios(){
@@ -252,6 +255,74 @@ public class UsuarioController {
             rsp = response.messageException(HttpStatus.BAD_REQUEST.value(),e);
         }
 
+        logger.info("Enviando respuesta");
+        return response.messageResponse(rsp);
+    }
+
+    @PostMapping("recuperar")
+    public ResponseEntity<?> recuperarPassword(@RequestParam String email){
+        Map<String, Object> rsp;
+        try {
+            logger.info("Buscando cliente por email");
+            Usuario usuario = services.getUserByEmailFirebase(email);
+            if (usuario !=null) {
+                logger.info("Cliente encontrado, generando link de recuperacion");
+            String link = FirebaseAuth.getInstance().generatePasswordResetLink(
+                    email, ActionCodeSettings.builder().build());
+
+                // Construct email verification template, embed the link and send
+                // using custom SMTP server.
+                logger.info("Enviando correo: " + link);
+                correo.enviarCorreo(email, securityService.getUser().getName(), link);
+                logger.info("Correo enviado exitosamente");
+                rsp = response.messageOk(HttpStatus.OK.value());
+            }else {
+                rsp = response.messageGeneric(HttpStatus.NO_CONTENT.value(),"Usuario no encontrado con email");
+            }
+        } catch (FirebaseAuthException e) {
+            logger.error("Ocurrio un error al subir imagen", e);
+            rsp = response.messageException(HttpStatus.BAD_REQUEST.value(),e);
+        }catch (ExecutionException e) {
+            logger.error("Ocurrio un error al subir imagen", e);
+            rsp = response.messageException(HttpStatus.BAD_REQUEST.value(),e);
+        } catch (InterruptedException e) {
+            logger.error("Ocurrio un error al subir imagen", e);
+            rsp = response.messageException(HttpStatus.BAD_REQUEST.value(),e);
+        }
+        logger.info("Enviando respuesta");
+        return response.messageResponse(rsp);
+    }
+
+    @PostMapping("validarEmail")
+    public ResponseEntity<?> validarEmail(@RequestParam String email){
+        Map<String, Object> rsp;
+        try {
+            logger.info("Buscando cliente por email");
+            Usuario usuario = services.getUserByEmailFirebase(email);
+            if (usuario !=null) {
+                logger.info("Cliente encontrado, enviando link de validacion");
+                String link = FirebaseAuth.getInstance().generateEmailVerificationLink(
+                        email, ActionCodeSettings.builder().build());
+
+                // Construct email verification template, embed the link and send
+                // using custom SMTP server.
+                logger.info("Enviando correo: " + link);
+                correo.enviarCorreo(email, securityService.getUser().getName(), link);
+                logger.info("Correo enviado exitosamente");
+                rsp = response.messageOk(HttpStatus.OK.value());
+            }else {
+                rsp = response.messageGeneric(HttpStatus.NO_CONTENT.value(),"Usuario no encontrado con email");
+            }
+        } catch (FirebaseAuthException e) {
+            logger.error("Ocurrio un error al subir imagen", e);
+            rsp = response.messageException(HttpStatus.BAD_REQUEST.value(),e);
+        }catch (ExecutionException e) {
+            logger.error("Ocurrio un error al subir imagen", e);
+            rsp = response.messageException(HttpStatus.BAD_REQUEST.value(),e);
+        } catch (InterruptedException e) {
+            logger.error("Ocurrio un error al subir imagen", e);
+            rsp = response.messageException(HttpStatus.BAD_REQUEST.value(),e);
+        }
         logger.info("Enviando respuesta");
         return response.messageResponse(rsp);
     }
